@@ -68,6 +68,7 @@ module System.Posix.Terminal.Common (
 
 import Data.Bits
 import Data.Char
+import Data.Word
 import Foreign.C.Error ( throwErrnoIfMinus1, throwErrnoIfMinus1_ )
 import Foreign.C.Types
 import Foreign.ForeignPtr ( ForeignPtr, withForeignPtr, mallocForeignPtrBytes )
@@ -311,7 +312,8 @@ withMinInput termios count = unsafePerformIO $ do
     pokeElemOff c_cc (#const VMIN) (fromIntegral count :: CCc)
 
 data BaudRate
-  = B0
+  = BaudRate Word64
+  | B0
   | B50
   | B75
   | B110
@@ -524,6 +526,7 @@ cc2Word Stop      = (#const VSTOP)
 -- Convert Haskell BaudRate to unsigned integral type (Word)
 
 baud2Word :: BaudRate -> CSpeed
+baud2Word (BaudRate cs) = CSpeed cs
 baud2Word B0 = (#const B0)
 baud2Word B50 = (#const B50)
 baud2Word B75 = (#const B75)
@@ -578,7 +581,7 @@ word2Baud x =
 #ifdef B115200
     else if x == (#const B115200) then B115200
 #endif
-    else error "unknown baud rate"
+    else case x of (CSpeed y) -> BaudRate y
 
 -- Clear termios i_flag
 
